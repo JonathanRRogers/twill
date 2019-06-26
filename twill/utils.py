@@ -1,8 +1,6 @@
 """
 Various ugly utility functions for twill.
 
-Apart from various simple utility functions, twill's robust parsing
-code is implemented in the ConfigurableParsingFactory class.
 """
 
 from cStringIO import StringIO
@@ -291,86 +289,6 @@ def run_tidy(html):
 
     return (clean_html, errors)
 
-class ConfigurableParsingFactory(mechanize.Factory):
-    """
-    A factory that listens to twill config options regarding parsing.
-
-    First: clean up passed-in HTML using tidy?
-    Second: parse using the regular parser, or BeautifulSoup?
-    Third: should we fail on, or ignore, parse errors?
-    """
-    
-    def __init__(self):
-        self.basic_factory = mechanize.DefaultFactory()
-        self.soup_factory = mechanize.RobustFactory()
-
-        self.set_response(None)
-
-    def set_request_class(self, request_class):
-        self.basic_factory.set_request_class(request_class)
-        self.soup_factory.set_request_class(request_class)
-
-    def set_response(self, response):
-        if not response:
-            self.factory = None
-            self._orig_html = self._html = self._url = None
-            return
-
-        ###
-
-        if self.use_BS():
-            self.factory = self.soup_factory
-        else:
-            self.factory = self.basic_factory
-        cleaned_response = self._cleanup_html(response)
-        self.factory.set_response(cleaned_response)
-
-    def links(self):
-        return self.factory.links()
-    
-    def forms(self):
-        return self.factory.forms()
-
-    def get_global_form(self):
-        return self.factory.global_form
-    global_form = property(get_global_form)
-
-    def _get_title(self):
-        return self.factory.title
-    title = property(_get_title)
-
-    def _get_encoding(self):
-        return self.factory.encoding
-    encoding = property(_get_encoding)
-
-    def _get_is_html(self):
-        return self.factory.is_html
-    is_html = property(_get_is_html)
-
-    def _cleanup_html(self, response):
-        response.seek(0)
-        self._orig_html = response.read()
-        self._url = response.geturl()
-        response.seek(0)
-
-        self._html = self._orig_html
-
-        from twill.commands import _options
-        use_tidy = _options.get('use_tidy')
-        if use_tidy:
-            (new_html, errors) = run_tidy(self._html)
-            if new_html:
-                self._html = new_html
-
-        return mechanize.make_response(self._html, response._headers.items(),
-                                       response._url, response.code,
-                                       response.msg)
-                                       
-    def use_BS(self):
-        from twill.commands import _options
-        flag = _options.get('use_BeautifulSoup')
-
-        return flag
 
 ###
 

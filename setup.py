@@ -10,7 +10,7 @@ except ImportError:
 
 setup(name = 'twill',
 
-      version = '0.9.1',
+      version = '0.9.1+jrr1',
       download_url = 'git://github.com/JonathanRRogers/twill.git',
 
       description = 'twill Web browsing language',
